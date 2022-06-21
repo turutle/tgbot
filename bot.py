@@ -1,68 +1,37 @@
-import logging
+import os
+import telebot
+from flask import Flask, request
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-
-# Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-
-logger = logging.getLogger(__name__)
-
-
-# Define a few command handlers. These usually take the two arguments update and
-# context. Error handlers also receive the raised TelegramError object in error.
-def start(update, context):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Hey this is your bot!')
+TOKEN = '5533526326:AAGH60IOi7EwmhYdFdmBQmtsrPrLuiqSsK0'
+APP_URL = f'https://tgbot-12795.herokuapp.com/{TOKEN}'
+bot = telebot.TeleBot(TOKEN)
+server = Flask(__name__)
 
 
-def help(update, context):
-    """Send a message when the command /help is issued."""
-    update.message.reply_text('Currently I am in Alpha stage, help me also!')
-
-def piracy(update, context):
-    update.message.reply_text('Ahhan, FBI wants to know your location!')
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, 'Hello, ' + message.from_user.first_name)
 
 
-def echo(update, context):
-    """Echo the user message."""
-    update.message.reply_text(update.message.text)
+@bot.message_handler(func=lambda message: True, content_types=['text'])
+def echo(message):
+    bot.reply_to(message, message.text)
 
 
-def error(update, context):
-    """Log Errors caused by Updates."""
-    logger.warning('Update "%s" caused error "%s"', update, context.error)
+@server.route('/' + TOKEN, methods=['POST'])
+def get_message():
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return '!', 200
 
 
-def main():
-    """Start the bot."""
-    # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
-    updater = Updater("//TOKEN//", use_context=True)
-
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
-
-    # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("piracy", piracy))
-
-    # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text, echo))
-
-    # log all errors
-    dp.add_error_handler(error)
-
-    # Start the Bot
-    updater.start_polling()
-
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
+@server.route('/')
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url=APP_URL)
+    return '!', 200
 
 
 if __name__ == '__main__':
-    main()
+    server.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
