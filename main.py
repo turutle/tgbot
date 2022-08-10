@@ -1,37 +1,20 @@
 import os
-import telebot
-from flask import Flask, request
+import psycopg2
+import requests
+import flask
 
-TOKEN = '5533526326:AAGH60IOi7EwmhYdFdmBQmtsrPrLuiqSsK0'
-APP_URL = f'https://tgbot-12795.herokuapp.com/{TOKEN}'
-bot = telebot.TeleBot(TOKEN)
-server = Flask(__name__)
+DB_URI = 'postgres://fmbdpcejbpsbxp:02538aa5feb439f7b50b9ab5df71bf8be38153d66ffcd457e50f8ea73c7661b7@ec2-99-81-16-126.eu-west-1.compute.amazonaws.com:5432/d54rrsefseb7hf'
+APP_URL = 'https://tgbot-12795.herokuapp.com/'
+TIME_URL = 'http://worldtimeapi.org/api/timezone/Europe/Moscow'
 
+db_connection = psycopg2.connect(DB_URI, sslmode="require")
+db_object = db_connection.cursor()
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.reply_to(message, 'Hello, ' + message.from_user.first_name)
-
-
-@bot.message_handler(func=lambda message: True, content_types=['text'])
-def echo(message):
-    bot.reply_to(message, message.text)
-
-
-@server.route('/' + TOKEN, methods=['POST'])
-def get_message():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return '!', 200
-
-
-@server.route('/')
-def webhook():
-    bot.remove_webhook()
-    bot.set_webhook(url=APP_URL)
-    return 'The bot is working!', 200
-
+@flask.route('/')
+def index():
+    return requests.get(TIME_URL).json()['datetime']
 
 if __name__ == '__main__':
     server.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    while True:
+        index()
