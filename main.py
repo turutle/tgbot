@@ -10,10 +10,11 @@ TIME_URL = 'http://worldtimeapi.org/api/timezone/Europe/Moscow'
 db_connection = psycopg2.connect(DB_URI, sslmode="require")
 db_object = db_connection.cursor()
 server = flask.Flask(__name__)
+nowTime = requests.get(TIME_URL).json()['datetime']
 
-@server.route('/', methods=['POST'])
+@server.route('/')
 def index():
-    return requests.get(TIME_URL).json()['datetime'], 200
+    return nowTime
 
 if __name__ == '__main__':
     server.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
