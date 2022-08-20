@@ -1,8 +1,11 @@
 import os
+import time
 import datetime
 import psycopg2
 import requests
 import flask
+from flask import request, render_template
+from jinja2 import Template
 
 DB_URI = 'postgres://fmbdpcejbpsbxp:02538aa5feb439f7b50b9ab5df71bf8be38153d66ffcd457e50f8ea73c7661b7@ec2-99-81-16-126.eu-west-1.compute.amazonaws.com:5432/d54rrsefseb7hf'
 APP_URL = 'https://tgbot-12795.herokuapp.com/'
